@@ -53,7 +53,7 @@ public class GridManager : MonoBehaviour
             for (int x = 0; x < width; x++)
             {
                 Cell cell = Instantiate(cellPrefab, playerBoard.transform);
-                cell.Init(x, y);
+                cell.Init(x, y, false, Unit.UnitA);
             }
         }
     }
