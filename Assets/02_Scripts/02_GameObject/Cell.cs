@@ -2,10 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using static UnityEngine.UI.CanvasScaler;
 
-public class Cell : MonoBehaviour
+public class Cell : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField] public int x;
     [SerializeField] public int y;
@@ -13,13 +14,17 @@ public class Cell : MonoBehaviour
     [SerializeField] public bool isObstacle = false;
     [SerializeField] public bool isRevealed = false;
     [SerializeField] public bool isDestroyed = false;
+    [SerializeField] public bool isHighlight = false;
     [SerializeField] public Unit unit;
 
     [SerializeField] public Image unitSprite;
     [SerializeField] public Image destroySprite;
     [SerializeField] public Image revealSprite;
+    [SerializeField] public Image outlineSprite;
 
     [SerializeField] public Sprite[] unitSprites;
+
+    [SerializeField] public GridManager gridManager;
     public void Init(int x, int y, Unit unit)
     {
         this.x = x;
@@ -36,32 +41,9 @@ public class Cell : MonoBehaviour
 
     private void Update()
     {
-        if(Input.GetKeyDown(KeyCode.Z))
+        if(Input.GetKeyDown(KeyCode.N))
         {
             Reveal();
-        }
-        if (Input.GetKeyDown(KeyCode.X))
-        {
-            Destory();
-        }
-        if (Input.GetKey(KeyCode.C))
-        {
-            if(Input.GetKeyDown(KeyCode.A))
-            {
-                SetUnit(0);
-            }
-            if (Input.GetKeyDown(KeyCode.S))
-            {
-                SetUnit(1);
-            }
-            if (Input.GetKeyDown(KeyCode.D))
-            {
-                SetUnit(2);
-            }
-            if (Input.GetKeyDown(KeyCode.F))
-            {
-                SetUnit(3);
-            }
         }
     }
 
@@ -80,6 +62,11 @@ public class Cell : MonoBehaviour
         unit = (Unit)input;
         UpdateCellSprite();
     }
+    public void SetHighlight(bool selected)
+    {
+        isHighlight = selected;
+        UpdateCellSprite();
+    }
 
     public void UpdateCellSprite()
     {
@@ -94,6 +81,15 @@ public class Cell : MonoBehaviour
         }
         revealSprite.gameObject.SetActive(!isRevealed);
         destroySprite.gameObject.SetActive(isDestroyed);
+        outlineSprite.gameObject.SetActive(isHighlight);
+
     }
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        gridManager.CellSelect(this);
+
+
+    }
+
 
 }
