@@ -25,18 +25,21 @@ public class Cell : MonoBehaviour, IPointerClickHandler
     [SerializeField] public Sprite[] unitSprites;
 
     [SerializeField] public GridManager gridManager;
-    public void Init(int x, int y, Unit unit)
+    [SerializeField] public Board board;
+    public void Init(int x, int y, Unit unit, Board board)
     {
         this.x = x;
         this.y = y;
         this.unit = unit;
         gameObject.name = $"Cell_{x}_{y}";
+        this.board = board;
         UpdateCellSprite();
     }
 
     private void Awake()
     {
         unitSprite = GetComponent<Image>();
+        gridManager = GridManager.Instance;
     }
 
     private void Update()
@@ -50,6 +53,11 @@ public class Cell : MonoBehaviour, IPointerClickHandler
     public void Reveal()
     {
         isRevealed = !isRevealed;
+        UpdateCellSprite();
+    }
+    public void Reveal(bool isRevealed)
+    {
+        this.isRevealed = isRevealed;
         UpdateCellSprite();
     }
     public void Destory()
@@ -86,7 +94,7 @@ public class Cell : MonoBehaviour, IPointerClickHandler
     }
     public void OnPointerClick(PointerEventData eventData)
     {
-        gridManager.CellSelect(this);
+        Player.Instance.CellSelect(this);
 
 
     }

@@ -5,18 +5,17 @@ using UnityEngine.SceneManagement;
 
 public class HalfSceneManager : MonoBehaviour
 {
-    public static HalfSceneManager Instance;
+    public static HalfSceneManager Instance = null;
     private void Awake()
     {
-        if(Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
+        if (Instance != null)
         {
             Destroy(gameObject);
+            return;
         }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
     }
 
     private void Update()

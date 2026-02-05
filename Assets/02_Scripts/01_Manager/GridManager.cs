@@ -2,18 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GridManager : MonoBehaviour
 {
-    public static GridManager Instance;
+    public static GridManager Instance = null;
 
     [SerializeField] private Cell cellPrefab;
     [SerializeField] private Board playerBoard;
     [SerializeField] private int width = 10;
     [SerializeField] private int height = 10;
-
-    [SerializeField] public Cell currentCell;
-
     private void Awake()
     {
         if (Instance == null)
@@ -25,17 +23,12 @@ public class GridManager : MonoBehaviour
         {
             Destroy(gameObject);
         }
-
-        BuildGrid();
     }
     private void Start()
     {
 
     }
-    private void BuildOneGrid()
-    {
-        Cell cell = Instantiate(cellPrefab, playerBoard.transform);
-    }
+  
 
     private void BuildGrid()
     {
@@ -44,179 +37,79 @@ public class GridManager : MonoBehaviour
             for (int x = 0; x < width; x++)
             {
                 Cell cell = Instantiate(cellPrefab, playerBoard.transform);
-                cell.Init(x, y, Unit.UnitA);
+                cell.Init(x, y, Unit.None, playerBoard);
+                cell.Reveal(true);
+                playerBoard.cells[x, y] = cell;
+            }
+        }
+    }
+    private void BuildGrid(GridData data)
+    {
+        for (int y = 0; y < data.height; y++)
+        {
+            for (int x = 0; x < data.width; x++)
+            {
+                Cell cell = Instantiate(cellPrefab, playerBoard.transform);
+
+                CellData cd = data.Get(x, y);
+
+                cell.Init(x, y, cd.unit, playerBoard);
+
+                cell.isRevealed = false;
+                cell.isDestroyed = false;
+                cell.isHighlight = false;
+
                 cell.gridManager = this;
                 playerBoard.cells[x, y] = cell;
             }
         }
     }
 
-    public void CellSelect(Cell cell)
+    private void SaveBoardToGameData()
     {
-        if (currentCell == cell)
+        GameData.gameData.playerGridData = new GridData(width, height);
+
+        if (GameData.gameData == null)
         {
-            currentCell.SetHighlight(false);
-            currentCell = null;
+            Debug.LogError("GameData가 씬에 없습니다");
             return;
         }
-        if (currentCell != null)
+        if (GameData.gameData.playerGridData == null)
         {
-            currentCell.SetHighlight(false);
+            GameData.gameData.InitNewGrid(width, height);
         }
-        currentCell = cell;
-        if (currentCell != null)
-        {
-            currentCell.SetHighlight(true);
-        }
-    }
 
-    public void ClearCellSelection()
-    {
-        if (currentCell != null)
+        for (int y = 0; y < height; y++)
         {
-            currentCell.SetHighlight(false);
-        }
-        currentCell = null;
-    }
-
-    public void CellSelectVertical(float v)
-    {
-        if (playerBoard.cells[0,0] == null)
-        {
-            return;
-        }
-        if (currentCell == null)
-        {
-            CellSelect(playerBoard.cells[4, 4]);
-            return;
-        }
-        // 현재 셀의 좌표값
-        int x = currentCell.x;
-        int y = currentCell.y;
-
-        if (v > 0)
-        {
-            if (y >= 9)
+            for (int x = 0; x < width; x++)
             {
-                return;
+                Cell cell = playerBoard.cells[x, y];
+
+                GameData.gameData.playerGridData.Set(x, y, new CellData { unit = cell.unit });
+                
             }
-            CellSelect(playerBoard.cells[x, y + 1]);
         }
-        if (v < 0)
-        {
-            if (y <= 0)
-            {
-                return;
-            }
-            CellSelect(playerBoard.cells[x, y - 1]);
-        }
+        Debug.Log("보드 저장 완료: GameData.playerGridData에 복사됨");
     }
 
-    public void CellSelectHorizontal(float h)
+    public void OnClickStartGame()
     {
-        if (playerBoard.cells[0, 0] == null)
-        {
-            return;
-        }
-        if (currentCell == null)
-        {
-            CellSelect(playerBoard.cells[4, 4]);
-        }
-        int x = currentCell.x;
-        int y = currentCell.y;
-
-        if (h > 0)
-        {
-            if (x >= 9)
-            {
-                return;
-            }
-            CellSelect(playerBoard.cells[x + 1, y]);
-        }
-        if (h < 0)
-        {
-            if (x <= 0)
-            {
-                return;
-            }
-            CellSelect(playerBoard.cells[x - 1, y]);
-        }
-    }
-    bool isMoving = false;
-    public void StartMove(float h, float v)
-    {
-        if (isMoving) return;
-        StartCoroutine(MoveRoutine());
-
-        if (h != 0 || v != 0)
-        {
-            CellSelectVertical(v);
-            CellSelectHorizontal(h);
-        }
-
-    }
-
-    IEnumerator MoveRoutine()
-    {
-        isMoving = true;
-        yield return new WaitForSeconds(0.15f);
-        isMoving = false;
+        SaveBoardToGameData();
+        HalfSceneManager.Instance.SceneGame();
     }
 
     public void Update()
     {
-
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            BuildOneGrid();
-        }
         if (Input.GetKeyDown(KeyCode.B))
         {
             BuildGrid();
         }
-
-        if (currentCell != null)
+        if (Input.GetKeyDown(KeyCode.N))
         {
-            if (Input.GetKeyDown(KeyCode.Z))
-            {
-                currentCell.Reveal();
-            }
-            if (Input.GetKeyDown(KeyCode.X))
-            {
-                currentCell.Destory();
-            }
-            if (Input.GetKey(KeyCode.C))
-            {
-                if (Input.GetKeyDown(KeyCode.A))
-                {
-                    currentCell.SetUnit(0);
-                }
-                if (Input.GetKeyDown(KeyCode.S))
-                {
-                    currentCell.SetUnit(1);
-                }
-                if (Input.GetKeyDown(KeyCode.D))
-                {
-                    currentCell.SetUnit(2);
-                }
-                if (Input.GetKeyDown(KeyCode.F))
-                {
-                    currentCell.SetUnit(3);
-                }
-            }
-            if (Input.GetKeyDown(KeyCode.V))
-            {
-                currentCell.SetHighlight(!currentCell.isHighlight);
-            }
+            BuildGrid();
         }
 
-        float h = Input.GetAxisRaw("Horizontal");
-        float v = Input.GetAxisRaw("Vertical");
 
-        if (h != 0 || v != 0)
-        {
-            StartMove(h, v);
-        }
     }
 }
 
