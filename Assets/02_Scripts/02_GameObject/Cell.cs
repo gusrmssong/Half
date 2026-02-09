@@ -26,20 +26,20 @@ public class Cell : MonoBehaviour, IPointerClickHandler
 
     [SerializeField] public GridManager gridManager;
     [SerializeField] public Board board;
-    public void Init(int x, int y, Unit unit, Board board)
+    public void Init(int x, int y, Unit unit, Board board, GridManager gridManager)
     {
         this.x = x;
         this.y = y;
         this.unit = unit;
         gameObject.name = $"Cell_{x}_{y}";
-        this.board = board;
+        this.board = board; 
+        this.gridManager = gridManager;
         UpdateCellSprite();
     }
 
     private void Awake()
     {
         unitSprite = GetComponent<Image>();
-        gridManager = GridManager.Instance;
     }
 
     private void Update()

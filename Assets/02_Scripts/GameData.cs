@@ -7,6 +7,8 @@ public class GameData : MonoBehaviour
     public static GameData gameData = null;
 
     public GridData playerGridData;
+    public GridData enemyGridData;
+
 
     private void Awake()
     {
@@ -23,6 +25,7 @@ public class GameData : MonoBehaviour
     public void InitNewGrid(int w, int h)
     {
         playerGridData = new GridData(w, h);
+        enemyGridData = new GridData(w, h);
     }
 
 }

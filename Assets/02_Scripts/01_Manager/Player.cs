@@ -8,8 +8,6 @@ public class Player : MonoBehaviour
 
     public static Player Instance;
 
-
-
     #region 셀 상호작용
 
     [SerializeField] public Cell currentCell;

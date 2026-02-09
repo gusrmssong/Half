@@ -6,61 +6,43 @@ using UnityEngine.SceneManagement;
 
 public class GridManager : MonoBehaviour
 {
-    public static GridManager Instance = null;
-
     [SerializeField] private Cell cellPrefab;
     [SerializeField] private Board playerBoard;
+    [SerializeField] private Board enemyBoard;
     [SerializeField] private int width = 10;
     [SerializeField] private int height = 10;
-    private void Awake()
-    {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
-    private void Start()
-    {
-
-    }
-  
-
-    private void BuildGrid()
+ 
+    private void BuildAlphaGrid()
     {
         for (int y = 0; y < height; y++)
         {
             for (int x = 0; x < width; x++)
             {
                 Cell cell = Instantiate(cellPrefab, playerBoard.transform);
-                cell.Init(x, y, Unit.None, playerBoard);
+                cell.Init(x, y, Unit.None, playerBoard, this);
                 cell.Reveal(true);
                 playerBoard.cells[x, y] = cell;
             }
         }
     }
-    private void BuildGrid(GridData data)
+    private void BuildBetaGrid(Board targetBoard, GridData data)
     {
         for (int y = 0; y < data.height; y++)
         {
             for (int x = 0; x < data.width; x++)
             {
-                Cell cell = Instantiate(cellPrefab, playerBoard.transform);
+                Cell cell = Instantiate(cellPrefab, targetBoard.transform);
 
                 CellData cd = data.Get(x, y);
 
-                cell.Init(x, y, cd.unit, playerBoard);
+                cell.Init(x, y, cd.unit, targetBoard, this);
 
                 cell.isRevealed = false;
                 cell.isDestroyed = false;
                 cell.isHighlight = false;
 
                 cell.gridManager = this;
-                playerBoard.cells[x, y] = cell;
+                targetBoard.cells[x, y] = cell;
             }
         }
     }
@@ -91,6 +73,18 @@ public class GridManager : MonoBehaviour
         }
         Debug.Log("보드 저장 완료: GameData.playerGridData에 복사됨");
     }
+    private void EnsureEnemyGrid()
+    {
+        if (GameData.gameData == null)
+        {
+            Debug.LogError("GameData가 없습니다. 준비 씬에 GameData 오브젝트가 있어야 합니다.");
+            return;
+        }
+
+        GameData.gameData.enemyGridData = EnemyGridPreset.CreatePresetA();
+        Debug.Log("적 그리드 프리셋 주입 완료");
+
+    }
 
     public void OnClickStartGame()
     {
@@ -102,12 +96,18 @@ public class GridManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.B))
         {
-            BuildGrid();
+            BuildAlphaGrid();
         }
         if (Input.GetKeyDown(KeyCode.N))
         {
-            BuildGrid();
+            BuildBetaGrid(playerBoard, GameData.gameData.playerGridData);
+            BuildBetaGrid(enemyBoard, GameData.gameData.enemyGridData);
         }
+        if (Input.GetKeyDown(KeyCode.M))
+        {
+            EnsureEnemyGrid();
+        }
+
 
 
     }
