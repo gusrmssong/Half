@@ -8,9 +8,9 @@ public class EnemyGridPreset : MonoBehaviour
     {
         GridData g = new GridData(10, 10);
 
-        g.Set(2, 3, new CellData { unit = Unit.UnitB});
-        g.Set(3, 3, new CellData { unit = Unit.UnitB});
-        g.Set(6, 6, new CellData { unit = Unit.UnitC });
+        g.Set(2, 3, new CellData(Unit.UnitB));
+        g.Set(3, 3, new CellData(Unit.UnitB));
+        g.Set(6, 6, new CellData(Unit.UnitC));
 
         return g;
     }

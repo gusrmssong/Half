@@ -8,14 +8,10 @@ using static UnityEngine.UI.CanvasScaler;
 
 public class Cell : MonoBehaviour, IPointerClickHandler
 {
-    [SerializeField] public int x;
-    [SerializeField] public int y;
 
-    [SerializeField] public bool isObstacle = false;
-    [SerializeField] public bool isRevealed = false;
-    [SerializeField] public bool isDestroyed = false;
+    public CellData cellData;
+
     [SerializeField] public bool isHighlight = false;
-    [SerializeField] public Unit unit;
 
     [SerializeField] public Image unitSprite;
     [SerializeField] public Image destroySprite;
@@ -26,48 +22,61 @@ public class Cell : MonoBehaviour, IPointerClickHandler
 
     [SerializeField] public GridManager gridManager;
     [SerializeField] public Board board;
-    public void Init(int x, int y, Unit unit, Board board, GridManager gridManager)
+
+    public void Init(int x, int y, Unit unit, Board board, GridManager gridManager, bool isRevealed)
     {
-        this.x = x;
-        this.y = y;
-        this.unit = unit;
+        if (cellData == null)
+            cellData = new CellData(Unit.None);
+
+        this.cellData.x = x;
+        this.cellData.y = y;
+        this.cellData.unit = unit;
         gameObject.name = $"Cell_{x}_{y}";
-        this.board = board; 
+        this.board = board;
+        this.cellData.isRevealed = isRevealed;
         this.gridManager = gridManager;
+        
         UpdateCellSprite();
     }
 
     private void Awake()
     {
         unitSprite = GetComponent<Image>();
+
+        if (cellData == null)
+        {
+            cellData = new CellData(Unit.None);
+        }
     }
 
     private void Update()
     {
-        if(Input.GetKeyDown(KeyCode.N))
-        {
-            Reveal();
-        }
+        
     }
 
     public void Reveal()
     {
-        isRevealed = !isRevealed;
+        cellData.isRevealed = !cellData.isRevealed;
         UpdateCellSprite();
     }
     public void Reveal(bool isRevealed)
     {
-        this.isRevealed = isRevealed;
+        this.cellData.isRevealed = isRevealed;
         UpdateCellSprite();
     }
     public void Destory()
     {
-        isDestroyed = !isDestroyed;
+        cellData.isDestroyed = !cellData.isDestroyed;
+        UpdateCellSprite();
+    }
+    public void Destory(bool isDestroyed)
+    {
+        cellData.isDestroyed = isDestroyed;
         UpdateCellSprite();
     }
     public void SetUnit(int input)
     {
-        unit = (Unit)input;
+        cellData.unit = (Unit)input;
         UpdateCellSprite();
     }
     public void SetHighlight(bool selected)
@@ -75,10 +84,15 @@ public class Cell : MonoBehaviour, IPointerClickHandler
         isHighlight = selected;
         UpdateCellSprite();
     }
+    public void SetHighlight()
+    {
+        isHighlight = !isHighlight;
+        UpdateCellSprite();
+    }
 
     public void UpdateCellSprite()
     {
-        int num = (int)unit;
+        int num = (int)cellData.unit;
         if (num >= 0 && num < unitSprites.Length)
         {
             unitSprite.sprite = unitSprites[num];
@@ -87,14 +101,14 @@ public class Cell : MonoBehaviour, IPointerClickHandler
         {
             Debug.Log("해당하는 유닛 스프라이트가 없습니다");
         }
-        revealSprite.gameObject.SetActive(!isRevealed);
-        destroySprite.gameObject.SetActive(isDestroyed);
+        revealSprite.gameObject.SetActive(!cellData.isRevealed);
+        destroySprite.gameObject.SetActive(cellData.isDestroyed);
         outlineSprite.gameObject.SetActive(isHighlight);
 
     }
     public void OnPointerClick(PointerEventData eventData)
     {
-        Player.Instance.CellSelect(this);
+        GameManager.Instance.CellSelect(this);
 
 
     }
