@@ -11,6 +11,7 @@ public class CellData
 
     public bool isRevealed = false;
     public bool isDestroyed = false;
+    public int placementId = -1;
 
     public CellData(Unit unit)
     {

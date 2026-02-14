@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using static UnityEngine.UI.CanvasScaler;
 
-public class Cell : MonoBehaviour, IPointerClickHandler
+public class Cell : MonoBehaviour, IPointerClickHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
 {
 
     public CellData cellData;
@@ -35,13 +35,13 @@ public class Cell : MonoBehaviour, IPointerClickHandler
         this.board = board;
         this.cellData.isRevealed = isRevealed;
         this.gridManager = gridManager;
+        this.cellData.placementId = -1;
         
         UpdateCellSprite();
     }
 
     private void Awake()
     {
-        unitSprite = GetComponent<Image>();
 
         if (cellData == null)
         {
@@ -53,6 +53,8 @@ public class Cell : MonoBehaviour, IPointerClickHandler
     {
         
     }
+
+    #region 셀 설정
 
     public void Reveal()
     {
@@ -89,7 +91,6 @@ public class Cell : MonoBehaviour, IPointerClickHandler
         isHighlight = !isHighlight;
         UpdateCellSprite();
     }
-
     public void UpdateCellSprite()
     {
         int num = (int)cellData.unit;
@@ -106,12 +107,59 @@ public class Cell : MonoBehaviour, IPointerClickHandler
         outlineSprite.gameObject.SetActive(isHighlight);
 
     }
+
+    #endregion
     public void OnPointerClick(PointerEventData eventData)
     {
         GameManager.Instance.CellSelect(this);
+        Debug.Log($"[CELL CLICK] ({cellData.x},{cellData.y}) unit={cellData.unit} pid={cellData.placementId}");
+        gridManager.SelectPlacement(board, cellData.placementId);
+
+    }
+
+    public void OnDrop(PointerEventData eventData)
+    {
+        gridManager.ClearPreview();
+        // 드롭한 대상이 UnitCardUI인지 확인
+        var card = eventData.pointerDrag != null ? eventData.pointerDrag.GetComponent<UnitCardUI>() : null;
+        if (card == null) return;
+
+        // 준비 화면은 playerBoard에 배치한다고 가정
+        bool placed = gridManager.TryPlaceUnit(board, new Vector2Int(cellData.x, cellData.y), card.CurrentSize, card.UnitType);
+
+        if (placed)
+        {
+            // 성공하면 패널에서 사라지게(지금 단계 목표)
+            card.gameObject.SetActive(false);
+        }
+        // 실패하면 UnitCardUI의 OnEndDrag가 원래 자리로 되돌려줌(지금 구조 그대로)
 
 
     }
 
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (eventData.pointerDrag == null) return;
 
+        var card = eventData.pointerDrag.GetComponent<UnitCardUI>();
+        if (card == null) return;
+
+        gridManager.ShowPreview(board, new Vector2Int(cellData.x, cellData.y), card.CurrentSize);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        gridManager.ClearPreview();
+    }
+
+    public void SetPreviewHighlight(bool on, bool canPlace)
+    {
+        isHighlight = on;
+
+        if (outlineSprite != null)
+        {
+            outlineSprite.gameObject.SetActive(on);
+            outlineSprite.color = canPlace ? Color.green : Color.red;
+        }
+    }
 }
