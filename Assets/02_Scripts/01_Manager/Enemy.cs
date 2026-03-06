@@ -18,7 +18,7 @@ public class Enemy : MonoBehaviour
     public void SetRandom()
     { 
         random = new List<int>();
-        for(int i = 1; i <= 100; i++)
+        for(int i = 0; i < 100; i++)
         {
             random.Add(i);
         }
@@ -56,22 +56,22 @@ public class Enemy : MonoBehaviour
         // 적의 턴 시작! -> 랜덤 숫자 생성하고 ->  셀 선택해서 공격 -> 결과 출력 -> 턴 넘기기
         Debug.Log("적의 턴 시작!");
 
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(0.4f);
 
         Debug.Log("랜덤 좌표 생성");
         Vector2Int vector = Index(MakeRandom());
 
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(0.4f);
 
         int x = vector.x;
         int y = vector.y;
         Debug.Log($"생성된 좌표는 [{x},{y}]");
 
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(0.4f);
 
         GameManager.Instance.enemyCell = playerBoard.cells[x, y];
 
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(0.4f);
 
         GameManager.Instance.EnemySelect();
 

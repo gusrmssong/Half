@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using static UnityEngine.UI.CanvasScaler;
 
-public class Cell : MonoBehaviour, IPointerClickHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler
+public class Cell : MonoBehaviour, IPointerClickHandler, IDropHandler, IPointerEnterHandler, IPointerExitHandler, IBeginDragHandler
 {
 
     public CellData cellData;
@@ -161,5 +161,15 @@ public class Cell : MonoBehaviour, IPointerClickHandler, IDropHandler, IPointerE
             outlineSprite.gameObject.SetActive(on);
             outlineSprite.color = canPlace ? Color.green : Color.red;
         }
+    }
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        Debug.Log($"[Cell OnBeginDrag] {gameObject.name} pid={(cellData != null ? cellData.placementId : -999)}");
+        // 빈칸이면 이동 시작 안 함
+        if (cellData == null) return;
+        if (cellData.placementId < 0) return;
+
+        // 배치된 유닛을 집어서 이동 시작
+        gridManager.BeginMovePlacement(board, cellData.placementId);
     }
 }

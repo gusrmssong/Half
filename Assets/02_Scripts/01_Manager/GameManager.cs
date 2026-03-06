@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+
     public static GameManager Instance = null;
 
     [SerializeField] public Cell currentCell;
@@ -20,6 +21,8 @@ public class GameManager : MonoBehaviour
 
     public Turn nowTurn;
     public int turnCount;
+
+    private bool isGameOver = false;
     private void Awake()
     {
         if( Instance == null)
@@ -57,7 +60,8 @@ public class GameManager : MonoBehaviour
 
     public void GameStart()
     {
-        if(playerBoard == null)
+        isGameOver = false;
+        if (playerBoard == null)
         {
             Debug.Log("플레이어 보드 주소를 받아오지 못함, 게임 시작 불가");
             return;
@@ -69,15 +73,23 @@ public class GameManager : MonoBehaviour
     }
     public void Endgame()
     {
+        if (isGameOver) return;
+        isGameOver = true;
+
         Debug.Log("게임 종료");
 
-        if(playerBoard.UpdateCount() != 0)
-        {
-            Debug.Log("플레이어 승리");
-        }
-        else
+        int playerLeft = playerBoard.UpdateCount();
+        int enemyLeft = enemyBoard.UpdateCount();
+
+        if (playerLeft <= 0)
         {
             Debug.Log("플레이어 패배");
+            if (uiManager != null) uiManager.ShowEndPanel();
+        }
+        else if (enemyLeft <= 0)
+        {
+            Debug.Log("플레이어 승리");
+            if (uiManager != null) uiManager.ShowWinPanel();
         }
     }
 
@@ -189,7 +201,7 @@ public class GameManager : MonoBehaviour
 
     #endregion
 
-    private void SetEnemyGridData()
+    public void SetEnemyGridData()
     {
         Instance.enemyGridData = EnemyGridPreset.CreatePresetA();
         Debug.Log("적 그리드 프리셋 주입 완료");

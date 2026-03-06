@@ -31,10 +31,6 @@ public class HalfSceneManager : MonoBehaviour
         {
             SceneGame();
         }
-        if (Input.GetKeyDown(KeyCode.Alpha4))
-        {
-            SceneShop();
-        }
         if (Input.GetKeyDown(KeyCode.Alpha5))
         {
             SceneEnding();
@@ -53,13 +49,9 @@ public class HalfSceneManager : MonoBehaviour
     {
         SceneManager.LoadScene(2);
     }
-    public void SceneShop()
-    {
-        SceneManager.LoadScene(3);
-    }
     public void SceneEnding()
     {
-        SceneManager.LoadScene(4);
+        SceneManager.LoadScene(3);
     }
 
 

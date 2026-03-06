@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 
 public class GridManager : MonoBehaviour
 {
@@ -12,22 +13,124 @@ public class GridManager : MonoBehaviour
     [SerializeField] private int width = 10;
     [SerializeField] private int height = 10;
 
+    [SerializeField] private GameObject unitCardPrefab;   // 이동용 카드 생성에 사용
+    [SerializeField] private Transform dragRoot;          // 보통 Canvas(또는 Canvas 하위 DragLayer)
+
+    private UnitCardUI movingCard = null;
+    private Cell hoverCell = null;
+
+    private bool isBuilt = false;
+
     private int nextPlacementId = 0;
     private readonly List<Cell> selectedCells = new List<Cell>();
 
     private readonly List<Cell> previewCells = new List<Cell>();
+    private void Start()
+    {
+        if (SceneManager.GetActiveScene().buildIndex != 2)
+        {
+            BuildSettingGridOnce();
+        }
+
+    }
+    public void GameStartA()
+    {
+
+        GameManager.Instance.playerBoard = playerBoard;
+        GameManager.Instance.enemyBoard = enemyBoard;
+
+        GameManager.Instance.SetEnemyGridData();
+
+        BuildGameGrid(playerBoard, GameManager.Instance.playerGridData);
+        BuildGameGrid(enemyBoard, GameManager.Instance.enemyGridData);
+
+        GameManager.Instance.GameStart();
+    }
     public void Update()
     {
-        if (Input.GetKeyDown(KeyCode.B))
-        {
-            BuildSettingGrid();
-        }
         if (Input.GetKeyDown(KeyCode.M))
         {
             BuildGameGrid(playerBoard, GameManager.Instance.playerGridData);
             BuildGameGrid(enemyBoard, GameManager.Instance.enemyGridData);
         }
+        if (movingCard == null) return;
+
+        // 1) 이동용 카드가 마우스를 따라가게
+        movingCard.transform.position = Input.mousePosition;
+
+        // 2) 현재 포인터 아래 셀 찾기 (UI 레이캐스트)
+        var cell = FindCellUnderPointer();  // 아래 4)에서 추가할 함수
+        if (cell != hoverCell)
+        {
+            hoverCell = cell;
+            if (hoverCell != null)
+                ShowPreview(hoverCell.board, new Vector2Int(hoverCell.cellData.x, hoverCell.cellData.y), movingCard.CurrentSize);
+            else
+                ClearPreview();
+        }
+
+        // 3) 마우스 버튼을 떼면 배치 시도
+        if (Input.GetMouseButtonUp(0))
+        {
+            if (hoverCell != null)
+            {
+                bool placed = TryPlaceUnit(
+                    hoverCell.board,
+                    new Vector2Int(hoverCell.cellData.x, hoverCell.cellData.y),
+                    movingCard.CurrentSize,
+                    movingCard.UnitType
+                );
+
+                if (placed)
+                {
+                    movingCard.EndExternalDrag();
+                    Destroy(movingCard.gameObject);
+                    movingCard = null;
+                    ClearPreview();
+                    hoverCell = null;
+                }
+                // 실패면 계속 들고 있게 둠(유저가 다른 곳으로 옮기면 됨)
+            }
+        }
     }
+
+    private void StartGameScene()
+    {
+        // 보드 주입
+        GameManager.Instance.playerBoard = playerBoard;
+        GameManager.Instance.enemyBoard = enemyBoard;
+
+        // 플레이어 데이터 없으면 시작 불가
+        if (GameManager.Instance.playerGridData == null)
+        {
+            Debug.LogError("playerGridData가 null이라 게임 시작 불가");
+            return;
+        }
+
+        // 적 데이터 없으면 프리셋 주입
+        if (GameManager.Instance.enemyGridData == null)
+        {
+            Debug.Log("enemyGridData가 null이라 프리셋 주입");
+            GameManager.Instance.SetEnemyGridData();
+        }
+
+        Debug.Log($"enemyGridData null? {GameManager.Instance.enemyGridData == null}");
+
+        // 보드 생성
+        BuildGameGrid(playerBoard, GameManager.Instance.playerGridData);
+        BuildGameGrid(enemyBoard, GameManager.Instance.enemyGridData);
+
+        // 시작
+        GameManager.Instance.GameStart();
+    }
+    private void BuildSettingGridOnce()
+    {
+        if (isBuilt) return;
+        isBuilt = true;
+
+        BuildSettingGrid();
+    }
+
     public void Select()
     {
         GameManager.Instance.Select();
@@ -38,7 +141,7 @@ public class GridManager : MonoBehaviour
     {
         GameManager.Instance.playerBoard = playerBoard;
         GameManager.Instance.enemyBoard = enemyBoard;
-
+        GameManager.Instance.SetEnemyGridData();
         GameManager.Instance.GameStart();
     }
     public void BuildSettingGrid() // 준비 화면 그리드 만들기
@@ -239,6 +342,121 @@ public class GridManager : MonoBehaviour
         }
     }
 
+    private bool TryGetPlacementInfo(Board targetBoard, int pid, out Unit unitType, out Vector2Int origin, out Vector2Int size)
+    {
+        unitType = Unit.None;
+        origin = Vector2Int.zero;
+        size = Vector2Int.zero;
+
+        int minX = int.MaxValue, minY = int.MaxValue;
+        int maxX = int.MinValue, maxY = int.MinValue;
+        bool found = false;
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                var cell = targetBoard.cells[x, y];
+                if (cell == null || cell.cellData == null) continue;
+
+                if (cell.cellData.placementId != pid) continue;
+
+                if (!found)
+                {
+                    unitType = cell.cellData.unit; // 같은 pid면 unitType도 동일하다고 가정
+                    found = true;
+                }
+
+                minX = Mathf.Min(minX, x);
+                minY = Mathf.Min(minY, y);
+                maxX = Mathf.Max(maxX, x);
+                maxY = Mathf.Max(maxY, y);
+            }
+        }
+
+        if (!found) return false;
+
+        origin = new Vector2Int(minX, minY);
+        size = new Vector2Int(maxX - minX + 1, maxY - minY + 1);
+        return true;
+    }
+    private void ClearPlacement(Board targetBoard, int pid)
+    {
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                var cell = targetBoard.cells[x, y];
+                if (cell == null || cell.cellData == null) continue;
+
+                if (cell.cellData.placementId != pid) continue;
+
+                cell.cellData.unit = Unit.None;
+                cell.cellData.placementId = -1;
+                cell.UpdateCellSprite(); // 표시가 아직 약해도 호출은 유지
+            }
+        }
+    }
+    public void BeginMovePlacement(Board targetBoard, int pid, Sprite icon = null, string id = "")
+    {
+        // 이미 이동 중이면 무시
+        if (movingCard != null) return;
+
+        if (pid < 0) return;
+
+        if (!TryGetPlacementInfo(targetBoard, pid, out var unitType, out var oldOrigin, out var size))
+            return;
+
+        // 1) 먼저 보드에서 제거(집기)
+        ClearPlacement(targetBoard, pid);
+
+        // 2) 이동용 카드 생성
+        var go = Instantiate(unitCardPrefab, dragRoot);
+        movingCard = go.GetComponent<UnitCardUI>();
+
+        // icon/id는 지금 단계에서는 없어도 되지만, 나중에 패널/아이콘 복구에 유용함
+        if (movingCard != null)
+        {
+            movingCard.Setup(id, size, icon, unitType);
+            movingCard.BeginExternalDrag();
+            movingCard.transform.position = Input.mousePosition;
+        }
+
+        // 선택/프리뷰 상태 정리
+        ClearSelection();
+        ClearPreview();
+        hoverCell = null;
+    }
+    private Cell FindCellUnderPointer()
+    {
+        if (EventSystem.current == null) return null;
+
+        var data = new PointerEventData(EventSystem.current)
+        {
+            position = Input.mousePosition
+        };
+
+        var results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(data, results);
+
+        for (int i = 0; i < results.Count; i++)
+        {
+            var cell = results[i].gameObject.GetComponentInParent<Cell>();
+            if (cell != null) return cell;
+        }
+
+        return null;
+    }
+
+
+    public void WinGame()
+    {
+        HalfSceneManager.Instance.SceneEnding();
+    }
+    public void LoseGame()
+    {
+        HalfSceneManager.Instance.SceneMain();
+    }
 }
 
 

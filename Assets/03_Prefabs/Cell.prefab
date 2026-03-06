@@ -203,22 +203,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cdf43885156e4a94e9447fdab4b5f7b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  x: 0
-  y: 0
-  isObstacle: 0
-  isRevealed: 0
-  isDestroyed: 0
+  cellData:
+    unit: 0
+    x: 0
+    y: 0
+    isRevealed: 0
+    isDestroyed: 0
+    placementId: 0
   isHighlight: 0
-  unit: 0
   unitSprite: {fileID: 2252063369301223823}
   destroySprite: {fileID: 737595216987417213}
   revealSprite: {fileID: 6143206861886448606}
   outlineSprite: {fileID: 1654611594337570337}
   unitSprites:
   - {fileID: 21300000, guid: 3912d601c295e13448ca4bfa5ac8eb80, type: 3}
-  - {fileID: 21300000, guid: 873e052906b13d7499ccfc3e2f20e44a, type: 3}
-  - {fileID: 21300000, guid: 890c65124c57cd548a377db373d4e573, type: 3}
-  - {fileID: 21300000, guid: 11f84b027517fff49bdb86c8d14f126a, type: 3}
+  - {fileID: 21300000, guid: 2c7eed778d5590643a3d8c4d69c68ad9, type: 3}
+  - {fileID: 21300000, guid: 2c7eed778d5590643a3d8c4d69c68ad9, type: 3}
+  - {fileID: 21300000, guid: 2c7eed778d5590643a3d8c4d69c68ad9, type: 3}
   gridManager: {fileID: 0}
   board: {fileID: 0}
 --- !u!222 &5273119057822121986
@@ -318,7 +319,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
